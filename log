@@ -1,1 +1,5 @@
-32-10-10 74.87%
+embedding-dim: 32 hidden-dim: 10 epoches: 10 accuracy: 74.87%
+embedding-dim: 2 hidden-dim: 2 epoches: 1 accuracy: 60.0%
+embedding-dim: 2 hidden-dim: 2 epoches: 1 accuracy: 60.0%
+embedding-dim: 2 hidden-dim: 2 epoches: 1 accuracy: 60.0%
+embedding-dim: 2 hidden-dim: 2 epoches: 1 accuracy: 70.0%

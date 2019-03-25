@@ -14,15 +14,18 @@ pprint = pprint.PrettyPrinter(indent=2).pprint
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='figure training arguments')
-parser.add_argument('--embedding-dim', default=10, type=int, required=False)
-parser.add_argument('--hidden-dim', default=10, type=int, required=False)
+parser.add_argument('--embedding-dim', default=2, type=int, required=False)
+parser.add_argument('--hidden-dim', default=2, type=int, required=False)
 parser.add_argument('-n', '--epoches', default=1, type=int, required=False)
-parser.add_argument('--train-size', default=100, type=int, required=False)
-parser.add_argument('--test-size', default=100, type=int, required=False)
+parser.add_argument('--train-size', default=10, type=int, required=False)
+parser.add_argument('--test-size', default=10, type=int, required=False)
+parser.add_argument('--batch-size', default=2, type=int, required=False)
+parser.add_argument('--sentence-len', default=50, type=int, required=False)
 parser.add_argument('--save-path', default='./checkpoint/model.pt', required=False, help='checkpoint save path')
 parser.add_argument('--load-path', default='./checkpoint/model.pt', required=False, help='checkpoint load path')
 parser.add_argument('-s', '--is-save', default=False, required=False)
 parser.add_argument('-l', '--is-load', default=False, required=False)
+parser.add_argument('-b', '--is-batch', default=False, required=False)
 args = parser.parse_args()
 
 EMBEDDING_DIM = args.embedding_dim
@@ -30,10 +33,13 @@ HIDDEN_DIM = args.hidden_dim
 EPOCHES = args.epoches
 TRAIN_SIZE = args.train_size
 TEST_SIZE = args.test_size
+BATCH_SIZE = args.batch_size
+SENTENCE_LEN = args.sentence_len
 SAVE_PATH = args.save_path
 LOAD_PATH = args.load_path
 is_save = args.is_save
 is_load = args.is_load
+is_batch = args.is_batch
 
 TAG_NUM = 2
 train_data_path = 'ratings_train.txt'
@@ -45,6 +51,7 @@ def read_data(filename):
     with open(filename, 'r') as f:
         data = [line.split('\t') for line in f.read().splitlines()]
         data = data[1:] # remove header
+
     return data
 
 def read_obj(filename):
@@ -63,6 +70,17 @@ def import_data():
 
     save_obj(train_docs, train_data_obj)
     save_obj(test_docs, test_data_obj)
+
+def get_padding(data):
+    new_data = []
+    for sentence, tag in data:
+        if len(sentence) <= SENTENCE_LEN: 
+            line = (['PAD' for _ in range(SENTENCE_LEN - len(sentence))] + sentence, tag)
+        else:
+            line = (sentence[:SENTENCE_LEN], tag)
+        new_data.append(line)
+
+    return new_data
 
 def preprocessing(sentence, stop_words=[]):
     tokens = [];
@@ -84,7 +102,7 @@ def get_word_dict(tokens):
     word_dict['UNK'] = len(word_dict)
 
     for word in tokens:
-        if word not in word_dict:
+        if word not in word_dict: # remove duplicates
             word_dict[word] = len(word_dict)
 
     return word_dict
@@ -141,15 +159,20 @@ def main():
     test_docs = read_obj('test_transfer_ko.obj')[:TEST_SIZE]
 
     stop_words = [ '은', '는', '이', '가', '하', '아', '것', '들','의', '있', '되', '수', '보', '주', '등', '한']
-    tokens_list = [preprocessing(review[0], stop_words) for review in train_docs]
-    # flat the token list
-    tokens = [item for tokens in tokens_list for item in tokens]
+    train_objs = [(preprocessing(review[0], stop_words), review[1]) for review in train_docs]
+    test_objs = [(preprocessing(review[0], stop_words), review[1]) for review in test_docs]
+    tokens = [item for tokens, _ in train_objs for item in tokens] # tokenize - flat the train objs
     word_dict = get_word_dict(tokens)
     word_embeddings = get_embeddings(word_dict, 'wiki_ko.vec', EMBEDDING_DIM)
 
     print('test "word_to_embeds"')
     pprint(word_to_embeds(['더빙', '목소리', '연기'], word_dict, word_embeddings))
-    
+
+    if is_batch: 
+        train_objs = get_padding(train_objs)
+        test_objs = get_padding(test_objs)
+    print(train_objs[0])
+
     if is_load:
         model = torch.load(LOAD_PATH)
     else:
@@ -161,14 +184,13 @@ def main():
 
     # Train
     for epoch in range(EPOCHES):
-        print(epoch, '/', EPOCHES)
-        for review, tag in train_docs:
+        print(epoch + 1, '/', EPOCHES)
+        for inputs, tag in train_objs:
+            if len(inputs) == 0: continue
             # Step 1. Remember that Pytorch accumulates gradients.
             model.zero_grad()
-    
+
             # Step 2. Get our inputs ready for the network, that is, turn them into
-            inputs = preprocessing(review, stop_words)
-            if len(inputs) == 0: continue
             targets = preprocessing_tag(tag)
 
             # Step 3. Run our forward pass.
@@ -187,10 +209,9 @@ def main():
     # Evaluate
     model.eval()
     correct = 0
-    total = len(test_docs)
+    total = len(test_objs)
     with torch.no_grad():
-        for review, tag in test_docs:
-            inputs = preprocessing(review, stop_words)
+        for inputs, tag in test_objs:
             if len(inputs) == 0: continue
             tag_scores = model(inputs)
             predicted = tag_scores[-1].argmax(dim=-1)
