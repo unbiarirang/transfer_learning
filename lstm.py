@@ -9,7 +9,6 @@ def prepare_sequence(seq, to_ix):
     idxs = [to_ix[w] for w in seq]
     return torch.tensor(idxs, dtype=torch.long)
 
-
 training_data = [
     ("The dog ate the apple".split(), ["DET", "NN", "V", "DET", "NN"]),
     ("The dog ate the banana".split(), ["DET", "NN", "V", "DET", "NN"]),

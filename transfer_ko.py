@@ -19,7 +19,6 @@ parser.add_argument('--hidden-dim', default=2, type=int, required=False)
 parser.add_argument('-n', '--epoches', default=1, type=int, required=False)
 parser.add_argument('--train-size', default=10, type=int, required=False)
 parser.add_argument('--test-size', default=10, type=int, required=False)
-parser.add_argument('--batch-size', default=2, type=int, required=False)
 parser.add_argument('--sentence-len', default=50, type=int, required=False)
 parser.add_argument('--save-path', default='./checkpoint/model.pt', required=False, help='checkpoint save path')
 parser.add_argument('--load-path', default='./checkpoint/model.pt', required=False, help='checkpoint load path')
@@ -33,7 +32,6 @@ HIDDEN_DIM = args.hidden_dim
 EPOCHES = args.epoches
 TRAIN_SIZE = args.train_size
 TEST_SIZE = args.test_size
-BATCH_SIZE = args.batch_size
 SENTENCE_LEN = args.sentence_len
 SAVE_PATH = args.save_path
 LOAD_PATH = args.load_path
@@ -221,6 +219,6 @@ def main():
     print(accuracy, '%')
 
     with open('./log', 'a') as f:
-        f.write('embedding-dim: {} hidden-dim: {} epoches: {} accuracy: {}%\n'.format(EMBEDDING_DIM, HIDDEN_DIM, EPOCHES, accuracy))
+        f.write('embedding-dim: {} hidden-dim: {} epoches: {} train_size: {} test_size: {} accuracy: {}%\n'.format(EMBEDDING_DIM, HIDDEN_DIM, EPOCHES, TRAIN_SIZE, TEST_SIZE, accuracy))
 
 main()
