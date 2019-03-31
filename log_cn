@@ -1,0 +1,12 @@
+embedding-dim: 2 hidden-dim: 2 epoches: 1 train_size: 10 test_size: 10 accuracy: 100.0%
+embedding-dim: 2 hidden-dim: 2 epoches: 1 train_size: 10 test_size: 10 accuracy: 0.0%
+embedding-dim: 2 hidden-dim: 2 epoches: 1 train_size: 10 test_size: 10 accuracy: 100.0%
+embedding-dim: 2 hidden-dim: 2 epoches: 1 train_size: 10 test_size: 10 accuracy: 99.9001996007984%
+embedding-dim: 2 hidden-dim: 2 epoches: 1 train_size: 10 test_size: 10 accuracy: 66.73333333333333%
+embedding-dim: 2 hidden-dim: 2 epoches: 1 train_size: 10 test_size: 10 accuracy: 49.8%
+embedding-dim: 2 hidden-dim: 2 epoches: 1 train_size: 10 test_size: 10 accuracy: 52.36907730673317%
+embedding-dim: 2 hidden-dim: 2 epoches: 1 train_size: 10 test_size: 10 accuracy: 45.27363184079602%
+embedding-dim: 2 hidden-dim: 2 epoches: 10 train_size: 1802 test_size: 201 accuracy: 48.258706467661696%
+embedding-dim: 32 hidden-dim: 10 epoches: 10 train_size: 1802 test_size: 201 accuracy: 66.66666666666666%
+embedding-dim: 128 hidden-dim: 32 epoches: 10 train_size: 1802 test_size: 201 accuracy: 81.59203980099502%
+embedding-dim: 256 hidden-dim: 32 epoches: 10 train_size: 1802 test_size: 201 accuracy: 73.6318407960199%

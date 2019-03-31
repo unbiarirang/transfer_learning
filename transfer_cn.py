@@ -1,15 +1,13 @@
 import re
 import numpy as np
-from konlpy.tag import Okt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import pprint
-import pickle
 import argparse
+from random import shuffle
 
-okt = Okt()
 pprint = pprint.PrettyPrinter(indent=2).pprint
 
 # Parse arguments
@@ -38,34 +36,13 @@ is_save = args.is_save
 is_load = args.is_load
 
 TAG_NUM = 2
-train_data_path = 'ratings_train.txt'
-test_data_path = 'ratings_test.txt'
-train_data_obj = 'train_transfer_ko.obj'
-test_data_obj = 'test_transfer_ko.obj'
+LOG_FILE = './log_cn'
 
 def read_data(filename):
     with open(filename, 'r') as f:
-        data = [line.split('\t') for line in f.read().splitlines()]
-        data = data[1:] # remove header
+        data = [line.split(' ') for line in f.read().splitlines()]
 
     return data
-
-def read_obj(filename):
-    return pickle.load(open(filename, 'rb'))
-
-def save_obj(obj, filename):
-    pickle.dump(obj, open(filename, 'wb'))
-
-# Data preprocessing. Execute only once
-def import_data():
-    train_data = read_data(train_data_path)
-    test_data = read_data(test_data_path)
-
-    train_docs = [(row[1], row[2]) for row in train_data]
-    test_docs = [(row[1], row[2]) for row in test_data]
-
-    save_obj(train_docs, train_data_obj)
-    save_obj(test_docs, test_data_obj)
 
 def get_padding(data):
     new_data = []
@@ -77,17 +54,6 @@ def get_padding(data):
         new_data.append(line)
 
     return new_data
-
-def preprocessing(sentence, stop_words=[]):
-    tokens = [];
-
-    line_text = re.sub("[^가-힣ㄱ-ㅎㅏ-ㅣ\\s]", "", sentence)
-    tokens += okt.morphs(line_text, stem=True)
-
-    if len(stop_words) != 0:
-        tokens = [token for token in tokens if token not in stop_words]
-
-    return tokens
 
 def preprocessing_tag(tag):
     return torch.tensor([int(tag)])
@@ -151,21 +117,27 @@ class LSTMTagger(nn.Module):
         return tag_scores
 
 def main():
-    train_docs = read_obj('train_transfer_ko.obj')
-    test_docs = read_obj('test_transfer_ko.obj')
-    if is_all == False:
-        train_docs = train_docs[:TRAIN_SIZE]
-        test_docs = test_docs[:TEST_SIZE]
+    # preprocessed train data
+    train_pos = [(words, 1) for words in read_data('train_transfer_cn_pos.txt')]
+    train_neg = [(words, 0) for words in read_data('train_transfer_cn_neg.txt')]
+    train_objs = train_pos + train_neg
+    shuffle(train_objs)
 
-    stop_words = [ '은', '는', '이', '가', '하', '아', '것', '들','의', '있', '되', '수', '보', '주', '등', '한']
-    train_objs = [(preprocessing(review[0], stop_words), review[1]) for review in train_docs]
-    test_objs = [(preprocessing(review[0], stop_words), review[1]) for review in test_docs]
+    # devide into two parts
+    test_objs = train_objs[-1 * len(train_objs) // 10:] # 1/5 of train set
+    train_objs = train_objs[:len(train_objs) - len(test_objs)]
+    print(len(test_objs), len(train_objs))
+
+    if is_all == False:
+        train_objs = train_objs[:TRAIN_SIZE]
+        test_objs = test_objs[:TEST_SIZE]
+
     tokens = [item for tokens, _ in train_objs for item in tokens] # tokenize - flat the train objs
     word_dict = get_word_dict(tokens)
-    word_embeddings = get_embeddings(word_dict, 'wiki_ko.vec', EMBEDDING_DIM)
+    word_embeddings = get_embeddings(word_dict, 'wiki_cn.vec', EMBEDDING_DIM)
 
     print('test "word_to_embeds"')
-    pprint(word_to_embeds(['더빙', '목소리', '연기'], word_dict, word_embeddings))
+    pprint(word_to_embeds(['酒店', '感觉', '便宜'], word_dict, word_embeddings))
 
     if is_load:
         model = torch.load(LOAD_PATH)
@@ -201,9 +173,9 @@ def main():
         print('save completed')
 
     # Evaluate
+    total = len(test_objs)
     model.eval()
     correct = 0
-    total = len(test_objs)
     with torch.no_grad():
         for inputs, tag in test_objs:
             if len(inputs) == 0: continue
@@ -212,9 +184,9 @@ def main():
             if predicted.item() == int(tag):
                 correct += 1
     accuracy = (correct / total) * 100
-    print(accuracy, '%')
+    print(accuracy, '% ', correct, '/', total)
 
-    with open('./log', 'a') as f:
-        f.write('embedding-dim: {} hidden-dim: {} epoches: {} train_size: {} test_size: {} accuracy: {}%\n'.format(EMBEDDING_DIM, HIDDEN_DIM, EPOCHES, TRAIN_SIZE, TEST_SIZE, accuracy))
+    with open(LOG_FILE, 'a') as f:
+        f.write('embedding-dim: {} hidden-dim: {} epoches: {} train_size: {} test_size: {} accuracy: {}%\n'.format(EMBEDDING_DIM, HIDDEN_DIM, EPOCHES, len(train_objs), len(test_objs), accuracy))
 
 main()
