@@ -1,7 +1,5 @@
 .DS_Store
 *.log
 *.swp
-*.obj
-*.txt
 *.vec
 checkpoint/
