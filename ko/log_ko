@@ -1,0 +1,7 @@
+embedding-dim: 32 hidden-dim: 10 epoches: 10 accuracy: 74.87%
+embedding-dim: 64 hidden-dim: 10 epoches: 10 accuracy: 70.0%
+embedding-dim: 64 hidden-dim: 10 epoches: 10 accuracy: 77.52265135908154%
+embedding-dim: 64 hidden-dim: 10 epoches: 20 accuracy: 77.20063203792228%
+embedding-dim: 128 hidden-dim: 32 epoches: 10 train_size: 10 test_size: 10 accuracy: 80.97685861151669%
+embedding-dim: 128 hidden-dim: 32 epoches: 10 train_size: 10 test_size: 10 accuracy: 81.11086665199913%
+embedding-dim: 128 hidden-dim: 2 epoches: 1 train_size: 10 test_size: 1000 accuracy: 81.0% is-train: False cp: ./checkpoint-kr/128-32-10.pt
